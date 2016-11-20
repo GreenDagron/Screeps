@@ -1,0 +1,68 @@
+var roleBuilder = require('role.Builder');
+var roleFixer = require('role.Fixer');
+var roleHarvester = require('role.Harvester');
+var roleUpgrader = require('role.Upgrader');
+var oldEnergy = 0;
+
+module.exports.loop = function() {
+    /* Clear unused names out of memory */
+    for (var name in Memory.creeps) {
+        if (!Game.creeps[name]) {
+            delete Memory.creeps[name];
+        }
+    }
+    
+    /* Update the console anytime energy reserve changes */
+    for (var name in Game.rooms) {
+        var currentEnergy = Game.rooms[name].energyAvailable;
+        if (currentEnergy != oldEnergy) {
+            console.log('Update: ' + name + ' now has ' + currentEnergy + '/' + Game.rooms[name].energyCapacityAvailable + ' energy.');
+            oldEnergy = currentEnergy;
+        }
+    }
+    
+    /* Spawn new Harvester creeps when necessary*/
+    var harvesters = _.filter(Game.creeps, (creep) => creep.memory.role == 'Harvester');
+    if (harvesters.length < 5) {
+        var newHarvester = Game.spawns["Dragon's Den"].createCreep([WORK, WORK, WORK, CARRY, CARRY, MOVE], undefined, {role: 'Harvester'});
+        console.log('Spawning new Harvester: ' + newHarvester);
+    }
+    
+    /* Spawn new Upgrader creeps when necessary*/
+    var upgraders = _.filter(Game.creeps, (creep) => creep.memory.role == 'Upgrader');
+    if (upgraders.length < 2) {
+        var newUpgrader = Game.spawns["Dragon's Den"].createCreep([WORK, WORK, CARRY, MOVE], undefined, {role: 'Upgrader'});
+        console.log('Spawning new Upgrader: ' + newUpgrader);
+    }    
+    
+    /* Spawn new Builder creeps when necessary*/
+    var builders = _.filter(Game.creeps, (creep) => creep.memory.role == 'Builder');
+    if (builders.length < 2) {
+        var newBuilder = Game.spawns["Dragon's Den"].createCreep([WORK, WORK, CARRY, MOVE], undefined, {role: 'Builder'});
+        console.log('Spawning new Builder: ' + newBuilder);
+    }
+    
+    /* Spawn new Fixer creeps when necessary*/
+    var fixers = _.filter(Game.creeps, (creep) => creep.memory.role == 'Fixer');
+    if (fixers.length < 2) {
+        var newFixer = Game.spawns["Dragon's Den"].createCreep([WORK, CARRY, MOVE], undefined, {role: 'Fixer'});
+        console.log('Spawning new Fixer: ' + newFixer);
+    }
+    
+    /* Run the assigned module for each creep */
+    for(var name in Game.creeps) {
+        var creep = Game.creeps[name];
+        if(creep.memory.role == 'Harvester') {
+            roleHarvester.run(creep);
+        }
+        if(creep.memory.role == 'Upgrader') {
+            roleUpgrader.run(creep);
+        }
+        if(creep.memory.role == 'Builder') {
+            roleBuilder.run(creep);
+        }
+        if(creep.memory.role == 'Fixer') {
+            roleFixer.run(creep);
+        }
+    }
+}
